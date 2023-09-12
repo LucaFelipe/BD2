@@ -1,35 +1,33 @@
-from database import Database
-from writeAJson import writeAJson
+from ProductAnalyzer import ProductAnalyzer
 
-db = Database(database="mercado", collection="compras")
-# db.resetDatabase()
+def main():
+    # Conecte-se ao banco de dados MongoDB
+    analyzer = ProductAnalyzer("mongodb://localhost:27017", "mydb", "sales")
 
-# 1.Média de gasto total:
-# result = db.collection.aggregate([
-#     {"$unwind": "$produtos"},
-#     {"$group": {"_id": "$cliente_id", "total": {"$sum": {"$multiply": ["$produtos.quantidade", "$produtos.preco"]}}}},
-#     {"$group": {"_id": None, "media": {"$avg": "$total"}}}
-# ])
+    # Exemplo 1: Total de vendas por dia
+    total_sales = analyzer.total_sales_per_day()
+    print("Total de vendas por dia:")
+    for entry in total_sales:
+        print(f"Data: {entry['_id']}, Total de Vendas: {entry['total_sales']}")
 
-# writeAJson(result, "Média de gasto total")
+    # Exemplo 2: Produto mais vendido
+    most_sold_product = analyzer.most_sold_product()
+    print("Produto mais vendido:")
+    print(most_sold_product)
 
-# # Cliente que mais comprou em cada dia:
-# result = db.collection.aggregate([
-#     {"$unwind": "$produtos"},
-#     {"$group": {"_id": {"cliente": "$cliente_id", "data": "$data_compra"}, "total": {"$sum": {"$multiply": ["$produtos.quantidade", "$produtos.preco"]}}}},
-#     {"$sort": {"_id.data": 1, "total": -1}},
-#     {"$group": {"_id": "$_id.data", "cliente": {"$first": "$_id.cliente"}, "total": {"$first": "$total"}}}
-# ])
+    # Exemplo 3: Cliente que mais gastou em uma única compra
+    customer_highest_purchase = analyzer.customer_with_highest_single_purchase()
+    print("Cliente que mais gastou em uma única compra:")
+    print(customer_highest_purchase)
 
-# writeAJson(result, "Cliente que mais comprou em cada dia")
+    # Exemplo 4: Produtos vendidos acima de uma quantidade específica
+    quantity_threshold = 1
+    products_above_threshold = analyzer.products_sold_above_quantity(quantity_threshold)
+    print(f"Produtos vendidos acima de {quantity_threshold} unidades:")
+    print(products_above_threshold)
 
-# # Produto mais vendido:
-result = db.collection.aggregate([
-    {"$unwind": "$produtos"},
-    {"$group": {"_id": "$produtos.descricao", "total": {"$sum": "$produtos.quantidade"}}},
-    {"$sort": {"total": -1}},
-    {"$limit": 1}
-])
+    # Feche a conexão com o MongoDB quando terminar
+    analyzer.close_connection()
 
-writeAJson(result, "Produto mais vendido")
-
+if __name__ == "__main__":
+    main()
